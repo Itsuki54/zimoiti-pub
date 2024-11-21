@@ -1,0 +1,281 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator erd {
+  provider = "prisma-erd-generator"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  salt         String
+  password     String
+  type         UserRole @default(USER)
+  isSubscribed Boolean  @default(false)
+  readTutorial Boolean  @default(false)
+  storeId      String?
+  settingId    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  setting      Setting? @relation(fields: [settingId], references: [id])
+  Store        Store?   @relation(fields: [storeId], references: [id])
+
+  @@index([settingId], map: "User_settingId_fkey")
+  @@index([storeId], map: "User_storeId_fkey")
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  recommned Boolean
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  owner     User[]
+}
+
+model Store {
+  id          String   @id @default(cuid())
+  name        String
+  furigana    String?
+  tags        String?
+  addressId   String?  @unique
+  phone       String
+  email       String
+  genre       String
+  url         String?
+  image       String?
+  barrier     Boolean  @default(false)
+  light       Int      @default(0)
+  lively      Int      @default(0)
+  location    String?
+  language    String?
+  birthday    Boolean  @default(false)
+  mobile      Boolean  @default(false)
+  wifi        Boolean  @default(false)
+  pet         Boolean  @default(false)
+  takeout     Boolean  @default(false)
+  smoking     Boolean  @default(false)
+  stamp       Boolean  @default(false)
+  point       Boolean  @default(false)
+  invoice     Boolean  @default(false)
+  kids        Boolean  @default(false)
+  freeDrink   Boolean  @default(false)
+  morning     Boolean  @default(false)
+  lunch       Boolean  @default(false)
+  dinner      Boolean  @default(false)
+  otoshi      Int      @default(0)
+  serviceFee  Int      @default(0)
+  bring       Boolean  @default(false)
+  unlimited   Int      @default(0)
+  buffet      Int      @default(0)
+  outlet      Boolean  @default(false)
+  reservation Boolean  @default(false)
+  projector   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  courses     Course[]
+  menus       Menu[]
+  parkings    Parking?
+  payments    Payment?
+  seats       Seat[]
+  address     Address? @relation(fields: [addressId], references: [id])
+  times       Time[]
+  toilets     Toilet[]
+  owners      User[]
+  tutorial    Boolean? @default(false)
+}
+
+model Parking {
+  id        String   @id @default(cuid())
+  inside    Boolean
+  outside   Boolean
+  capacity  Int
+  storeId   String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Store     Store    @relation(fields: [storeId], references: [id])
+  time      Time[]
+
+  @@index([storeId], map: "Parking_storeId_fkey")
+}
+
+model Menu {
+  id          String        @id @default(cuid())
+  name        String
+  genre       String
+  description String
+  readyTime   String
+  allergen    String
+  image       String?
+  price       Int
+  storeId     String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  Store       Store         @relation(fields: [storeId], references: [id])
+  serviceTime ServiceTime[]
+
+  @@index([storeId], map: "Menu_storeId_fkey")
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  street    String
+  city      String
+  state     String
+  zip       String
+  storeId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Store     Store?
+}
+
+model Time {
+  id        String   @id @default(cuid())
+  day       String
+  open      String
+  close     String
+  tag       String?
+  storeId   String?
+  parkingId String?
+  price     Int?     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reserve   Reserve?
+  Parking   Parking? @relation(fields: [parkingId], references: [id])
+  Store     Store?   @relation(fields: [storeId], references: [id])
+
+  @@index([parkingId], map: "Time_parkingId_fkey")
+  @@index([storeId], map: "Time_storeId_fkey")
+}
+
+model ServiceTime {
+  id        String   @id @default(cuid())
+  day       String
+  start     String
+  end       String
+  tag       String
+  menuId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Menu      Menu     @relation(fields: [menuId], references: [id])
+
+  @@index([menuId], map: "ServiceTime_menuId_fkey")
+}
+
+model Reserve {
+  id      String @id @default(cuid())
+  storeId String
+  phone   String
+  email   String
+  url     String
+  timeId  String @unique
+  time    Time   @relation(fields: [timeId], references: [id])
+}
+
+model Course {
+  id          String       @id @default(cuid())
+  name        String
+  description String
+  genre       String
+  image       String?
+  price       Int
+  storeId     String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  Store       Store        @relation(fields: [storeId], references: [id])
+  CourseMenu  CourseMenu[]
+
+  @@index([storeId], map: "Course_storeId_fkey")
+}
+
+model CourseMenu {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  allergen    String
+  image       String?
+  courseId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Course      Course   @relation(fields: [courseId], references: [id])
+
+  @@index([courseId], map: "CourseMenu_courseId_fkey")
+}
+
+model Seat {
+  id        String   @id @default(cuid())
+  madori    String
+  smoking   Boolean
+  table     Boolean
+  seats     Int
+  maximum   Int
+  storeId   String
+  toiletId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  store     Store    @relation(fields: [storeId], references: [id])
+  toilet    Toilet   @relation(fields: [toiletId], references: [id])
+
+  @@index([storeId], map: "Seat_storeId_fkey")
+  @@index([toiletId], map: "Seat_toiletId_fkey")
+}
+
+model Toilet {
+  id         String       @id @default(cuid())
+  inside     Boolean
+  outside    Boolean
+  storeId    String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  Seat       Seat[]
+  Store      Store        @relation(fields: [storeId], references: [id])
+  toiletType ToiletType[]
+
+  @@index([storeId], map: "Toilet_storeId_fkey")
+}
+
+model ToiletType {
+  id        String   @id @default(cuid())
+  gender    String
+  wayou     Boolean
+  washlet   Boolean
+  toiletId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Toilet    Toilet   @relation(fields: [toiletId], references: [id])
+
+  @@index([toiletId], map: "ToiletType_toiletId_fkey")
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  card      String
+  cash      Boolean
+  QR        String
+  transit   Boolean
+  IDPay     Boolean
+  QuickPay  Boolean
+  Nanaco    Boolean
+  Edy       Boolean
+  WAON      Boolean
+  Pitapa    Boolean
+  storeId   String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Store     Store    @relation(fields: [storeId], references: [id])
+
+  @@index([storeId], map: "Payment_storeId_fkey")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  OWNER
+}
